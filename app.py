@@ -10,7 +10,7 @@ GRAYLOG_ADDRESS = os.environ.get('GRAYLOG_ADDRESS')
 SENTINEL_ADDRESS = os.environ.get('SENTINEL_ADDRESS')
 SENTINEL_PORT = os.environ.get('SENTINEL_PORT')
 
-VERBOSE = '-v' in sys.argv or os.environ.get('VERBOSE').lower() in ['true', 'yes']
+VERBOSE = '-v' in sys.argv or os.environ.get('VERBOSE', '').lower() in ['true', 'yes']
 
 logger = logging.getLogger('sentinel')
 
