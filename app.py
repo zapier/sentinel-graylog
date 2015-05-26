@@ -51,4 +51,9 @@ def main():
         logger.info(u'{} {}'.format(message['channel'], message['data']))
 
 if __name__ == '__main__':
-    main()
+    while True:
+        try:
+            main()
+        except Exception as e:
+            logger.exception(e)
+            time.sleep(5)
