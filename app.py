@@ -9,13 +9,15 @@ from redis.client import StrictRedis
 GRAYLOG_ADDRESS = os.environ.get('GRAYLOG_ADDRESS')
 SENTINEL_ADDRESS = os.environ.get('SENTINEL_ADDRESS')
 SENTINEL_PORT = os.environ.get('SENTINEL_PORT')
+LOGGING_HOSTNAME = os.environ.get('LOGGING_HOSTNAME')
 
 VERBOSE = '-v' in sys.argv or os.environ.get('VERBOSE', '').lower() in ['true', 'yes']
 
 logger = logging.getLogger('sentinel')
 
 if GRAYLOG_ADDRESS:
-    handler = graypy.GELFHandler(GRAYLOG_ADDRESS, 12201)
+    handler = graypy.GELFHandler(GRAYLOG_ADDRESS, 12201,
+                                 localname=LOGGING_HOSTNAME)
     logger.setLevel(logging.INFO)
 
 if not GRAYLOG_ADDRESS or VERBOSE:
