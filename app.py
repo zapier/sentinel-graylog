@@ -6,21 +6,21 @@ import time
 import graypy
 from redis.client import StrictRedis
 
-GRAYLOG_ADDRESS = os.environ.get('GRAYLOG_ADDRESS')
-SENTINEL_ADDRESS = os.environ.get('SENTINEL_ADDRESS')
-SENTINEL_PORT = os.environ.get('SENTINEL_PORT')
+SENTINEL_HOST = os.environ.get('SENTINEL_HOST', 'localhost')
+SENTINEL_PORT = int(os.environ.get('SENTINEL_PORT', 26379))
+GRAYLOG_HOST = os.environ.get('GRAYLOG_HOST', 'localhost')
 LOGGING_HOSTNAME = os.environ.get('LOGGING_HOSTNAME')
 
 VERBOSE = '-v' in sys.argv or os.environ.get('VERBOSE', '').lower() in ['true', 'yes']
 
 logger = logging.getLogger('sentinel')
 
-if GRAYLOG_ADDRESS:
-    handler = graypy.GELFHandler(GRAYLOG_ADDRESS, 12201,
+if GRAYLOG_HOST:
+    handler = graypy.GELFHandler(GRAYLOG_HOST, 12201,
                                  localname=LOGGING_HOSTNAME)
     logger.setLevel(logging.INFO)
 
-if not GRAYLOG_ADDRESS or VERBOSE:
+if not GRAYLOG_HOST or VERBOSE:
     handler = logging.StreamHandler()
     logger.setLevel(logging.DEBUG)
     formatter = logging.Formatter('[%(asctime)s %(name)s %(levelname)s] %(message)s')
@@ -29,17 +29,11 @@ if not GRAYLOG_ADDRESS or VERBOSE:
 logger.addHandler(handler)
 
 
-def main():
-    if not (SENTINEL_ADDRESS and SENTINEL_PORT):
-        logger.error(
-            'Both SENTINEL_ADDRESS and SENTINEL_PORT environment variables '
-            'must be provided.')
-        sys.exit(-1)
-
+def run_once():
     logger.debug('Connecting to Sentinel on {}:{}'.format(
-        SENTINEL_ADDRESS, SENTINEL_PORT))
+        SENTINEL_HOST, SENTINEL_PORT))
 
-    sentinel = StrictRedis(SENTINEL_ADDRESS, SENTINEL_PORT)
+    sentinel = StrictRedis(SENTINEL_HOST, SENTINEL_PORT)
     masters = sentinel.sentinel_masters()
 
     logger.debug('Sentinel reports {} monitored cluster(s)'.format(len(masters)))
@@ -52,10 +46,14 @@ def main():
     for message in pubsub.listen():
         logger.info(u'{} {}'.format(message['channel'], message['data']))
 
-if __name__ == '__main__':
+
+def main():
     while True:
         try:
-            main()
+            run_once()
         except Exception as e:
             logger.exception(e)
             time.sleep(5)
+
+if __name__ == '__main__':
+    main()
